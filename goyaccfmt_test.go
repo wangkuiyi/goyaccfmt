@@ -15,16 +15,12 @@ package main
 
 import (
 	"bytes"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGoYaccFmt(t *testing.T) {
-	a := assert.New(t)
-
-	in := strings.NewReader(`
+const testGoyaccSrc = `
   %{
 	package parser
 	import 	"fmt"
@@ -44,9 +40,25 @@ sqlflow_select_stmt
   };
   %%
 func main() { Print() }
-`)
+`
+
+func TestGoYaccFmt(t *testing.T) {
+	a := assert.New(t)
+
 	var out bytes.Buffer
-	a.NoError(goyaccfmt(in, &out))
+	f, e := newGofmt(&out)
+	a.NoError(e)
+
+	_, e = f.Write([]byte(`
+	package parser
+	import 	"fmt"
+func Print() { fmt.Println("Hello")
+}
+func    main() { Print() }
+`))
+	a.NoError(e)
+
+	a.NoError(f.Close())
 	a.Equal(`package parser
 
 import "fmt"

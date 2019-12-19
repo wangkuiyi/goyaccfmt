@@ -85,42 +85,78 @@ const (
 )
 
 func goyaccfmt(in io.Reader, out io.Writer) error {
-	pr, pw := io.Pipe()
+	var fmtr *gofmt
+	var e error
 
-	var stderr bytes.Buffer
-	cmd := exec.Command("gofmt")
-	cmd.Stdin = pr
-	cmd.Stdout = out
-	cmd.Stderr = &stderr
-
-	if e := cmd.Start(); e != nil {
-		return fmt.Errorf("Cannot start gofmt: %v", e)
-	}
-
-	content := HEAD
+	current := HEAD
 
 	scanner := bufio.NewScanner(in)
 	for scanner.Scan() {
 		switch l := strings.TrimSpace(scanner.Text()); l {
 		case "%{", "%}", "%%":
-			content++
+			current++
+
+			switch current {
+			case PREEMBLE, APPENDIX:
+				fmtr, e = newGofmt(out)
+				if e != nil {
+					return fmt.Errorf("newGofmt: %v", e)
+				}
+			case TYPES:
+				fmtr.Close()
+			}
+
 		default:
-			if content == PREEMBLE || content == APPENDIX {
-				if _, e := pw.Write(scanner.Bytes()); e != nil {
+
+			if current == PREEMBLE || current == APPENDIX {
+				if _, e := fmtr.Write(scanner.Bytes()); e != nil {
 					return fmt.Errorf("Copying content error: %v", e)
 				}
-				pw.Write([]byte("\n"))
+				fmtr.Write([]byte("\n"))
 			}
 		}
 	}
-	pw.Close() // Signal the end of content.
 
 	if e := scanner.Err(); e != nil {
 		return fmt.Errorf("Scanner error: %v", e)
 	}
 
-	if e := cmd.Wait(); e != nil {
-		return fmt.Errorf("Waiting for gofmt: %v. %s", e, stderr.String())
+	return fmtr.Close()
+}
+
+type gofmt struct {
+	pr     *io.PipeReader
+	pw     *io.PipeWriter
+	cmd    *exec.Cmd
+	stderr bytes.Buffer
+}
+
+func newGofmt(out io.Writer) (*gofmt, error) {
+	f := &gofmt{}
+	f.pr, f.pw = io.Pipe()
+
+	f.cmd = exec.Command("gofmt")
+	f.cmd.Stdin = f.pr
+	f.cmd.Stdout = out
+	f.cmd.Stderr = &f.stderr
+
+	if e := f.cmd.Start(); e != nil {
+		return nil, fmt.Errorf("Cannot start gofmt: %v", e)
+	}
+	return f, nil
+}
+
+func (fmtr *gofmt) Write(b []byte) (int, error) {
+	return fmtr.pw.Write(b)
+}
+
+func (fmtr *gofmt) Close() error {
+	if e := fmtr.pw.Close(); e != nil { // Signal the end of content.
+		return fmt.Errorf("Close pipe writer: %v", e)
+	}
+
+	if e := fmtr.cmd.Wait(); e != nil {
+		return fmt.Errorf("Waiting for gofmt: %v. %s", e, fmtr.stderr.String())
 	}
 
 	return nil
