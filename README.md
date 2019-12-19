@@ -26,9 +26,9 @@ For inline reformat, please use option `-w`.
 goyaccfmt -w a.y
 ```
 
-</td><td>
+To the right is the difference before and after auto reformatting the grammar rule file of [SQLFlow](https://sqlflow.org/sqlflow).
 
-Here is an example of the difference before and after auto reformatting the grammar file of [SQLFlow](https://sqlflow.org/sqlflow).
+</td><td>
 
 ![](opendiff-goyaccfmt.png)
 
