@@ -13,3 +13,7 @@ For inline reformat, please use option `-w`.
 ```bash
 goyaccfmt -w a.y
 ```
+
+Here is an example of the difference before and after auto reformatting the grammar file of [SQLFlow](https://sqlflow.org/sqlflow).
+
+![](opendiff-goyaccfmt.png)
