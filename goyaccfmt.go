@@ -59,7 +59,9 @@ func goyaccfmtMain(path string, overwrite bool) error {
 	}
 
 	e = goyaccfmt(in, out)
-	in.Close()
+	if e := in.Close(); e != nil {
+		return fmt.Errorf("Failed closing source file: %v", e)
+	}
 
 	if e != nil {
 		return e
@@ -68,9 +70,14 @@ func goyaccfmtMain(path string, overwrite bool) error {
 	if overwrite {
 		f, e := os.Create(path)
 		if e != nil {
-			return e
+			return fmt.Errorf("Cannot open source file for overwrite: %v", e)
 		}
-		defer f.Close()
+		if _, e := io.Copy(f, &buf); e != nil {
+			return fmt.Errorf("Failed overwriting %v", e)
+		}
+		if e := f.Close(); e != nil {
+			return fmt.Errorf("Failed closing after overwriting %v", e)
+		}
 	}
 
 	return nil
