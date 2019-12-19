@@ -1,22 +1,19 @@
 # `goyaccfmt`
 
+`goyaccfmt` auto reformats [`goyacc`](https://godoc.org/golang.org/x/tools/cmd/goyacc) source code by calling [`gofmt`](https://golang.org/cmd/gofmt/). 
+
 <table>
 
 <tr>
 <td>
-
-`goyaccfmt` auto reformats [`goyacc`](https://godoc.org/golang.org/x/tools/cmd/goyacc) source code by calling [`gofmt`](https://golang.org/cmd/gofmt/). 
-
+Usage
 </td><td>
-
-Here is an example of the difference before and after auto reformatting the grammar file of [SQLFlow](https://sqlflow.org/sqlflow).
-
+Example
 </td>
 </tr>
 
 <tr>
 <td>
-
 The following command reformats a source file `a.y` and outputs to stdout.
 
 ```bash
@@ -30,6 +27,8 @@ goyaccfmt -w a.y
 ```
 
 </td><td>
+
+Here is an example of the difference before and after auto reformatting the grammar file of [SQLFlow](https://sqlflow.org/sqlflow).
 
 ![](opendiff-goyaccfmt.png)
 
