@@ -2,7 +2,7 @@
 
 `goyaccfmt` auto reformats [`goyacc`](https://godoc.org/golang.org/x/tools/cmd/goyacc) source code by calling [`gofmt`](https://golang.org/cmd/gofmt/). 
 
-<table>
+<table border=0>
 <tr><td>
 
 The following command reformats a source file `a.y` and outputs to stdout.
