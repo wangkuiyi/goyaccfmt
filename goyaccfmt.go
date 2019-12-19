@@ -87,7 +87,6 @@ const (
 func goyaccfmt(in io.Reader, out io.Writer) error {
 	var fmtr *gofmt
 	var e error
-
 	current := HEAD
 
 	scanner := bufio.NewScanner(in)
@@ -95,7 +94,6 @@ func goyaccfmt(in io.Reader, out io.Writer) error {
 		switch l := strings.TrimSpace(scanner.Text()); l {
 		case "%{", "%}", "%%":
 			current++
-
 			switch current {
 			case PREEMBLE, APPENDIX:
 				fmtr, e = newGofmt(out)
@@ -105,15 +103,17 @@ func goyaccfmt(in io.Reader, out io.Writer) error {
 			case TYPES:
 				fmtr.Close()
 			}
+			fmt.Fprintf(out, "%s\n", l)
 
 		default:
-
+			var w io.Writer = out
 			if current == PREEMBLE || current == APPENDIX {
-				if _, e := fmtr.Write(scanner.Bytes()); e != nil {
-					return fmt.Errorf("Copying content error: %v", e)
-				}
-				fmtr.Write([]byte("\n"))
+				w = fmtr
 			}
+			if _, e := w.Write(scanner.Bytes()); e != nil {
+				return fmt.Errorf("Copying content error: %v", e)
+			}
+			w.Write([]byte("\n"))
 		}
 	}
 

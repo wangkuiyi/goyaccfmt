@@ -15,34 +15,49 @@ package main
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-const testGoyaccSrc = `
+func TestGoYaccFmt(t *testing.T) {
+	a := assert.New(t)
+
+	in := strings.NewReader(`
   %{
 	package parser
 	import 	"fmt"
 func Print() { fmt.Println("Hello")
 }
   %}
-%type  <eslt> sqlflow_select_stmt
-%type  <slct> standard_select_stmt
-
+%type  <eslt> sqlflow_select_stmt standard_select_stmt
 %%
-
-sqlflow_select_stmt
-: standard_select_stmt end_of_stmt {
-	parseResult = &SQLFlowSelectStmt{
-		Extended: false,
-		StandardSelect: $1}
-  };
+sqlflow_select_stmt : standard_select_stmt end_of_stmt {};
   %%
 func main() { Print() }
-`
+`)
+	var out bytes.Buffer
+	a.NoError(goyaccfmt(in, &out))
+	a.Equal(`
+%{
+package parser
 
-func TestGoYaccFmt(t *testing.T) {
+import "fmt"
+
+func Print() {
+	fmt.Println("Hello")
+}
+%}
+%type  <eslt> sqlflow_select_stmt standard_select_stmt
+%%
+sqlflow_select_stmt : standard_select_stmt end_of_stmt {};
+%%
+func main() { Print() }
+`, out.String())
+}
+
+func TestGoFmt(t *testing.T) {
 	a := assert.New(t)
 
 	var out bytes.Buffer
