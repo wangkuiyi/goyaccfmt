@@ -1,5 +1,7 @@
 # `goyaccfmt`
 
+[![Go Report](https://goreportcard.com/badge/github.com/wangkuiyi/goyaccfmt)](https://goreportcard.com/badge/github.com/wangkuiyi/goyaccfmt)
+
 `goyaccfmt` auto reformats [`goyacc`](https://godoc.org/golang.org/x/tools/cmd/goyacc) source code by calling [`gofmt`](https://golang.org/cmd/gofmt/). 
 
 <table border=0>
