@@ -19,13 +19,14 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 )
 
 func usage() {
-	fmt.Fprintf(os.Stderr, "usage: goyaccfmt path\n")
+	fmt.Fprintf(os.Stderr, "usage: goyaccfmt [-w] path\n")
 	flag.PrintDefaults()
 }
 
@@ -50,48 +51,49 @@ func goyaccfmtMain(path string, overwrite bool) error {
 		return fmt.Errorf("Cannot open input %s: %v", path, e)
 	}
 
-	var out io.Writer
-	var buf bytes.Buffer
-	if overwrite {
-		out = &buf
-	} else {
-		out = os.Stdout
+	out, e := ioutil.TempFile("", "")
+	if e != nil {
+		return fmt.Errorf("Cannot create temp file: %v", e)
 	}
 
 	e = goyaccfmt(in, out)
+	if e != nil {
+		return fmt.Errorf("goyaccfmt: %v", e)
+	}
+
 	if e := in.Close(); e != nil {
 		return fmt.Errorf("Failed closing source file: %v", e)
 	}
 
+	if e := out.Close(); e != nil {
+		return fmt.Errorf("Cannot close temp output file: %v", e)
+	}
+
+	if overwrite {
+		return os.Rename(out.Name(), path)
+	}
+	return cat(out.Name(), os.Stdout)
+}
+
+func cat(filename string, w io.Writer) error {
+	f, e := os.Open(filename)
 	if e != nil {
 		return e
 	}
 
-	if overwrite {
-		f, e := os.Create(path)
-		if e != nil {
-			return fmt.Errorf("Cannot open source file for overwrite: %v", e)
-		}
-		if _, e := io.Copy(f, &buf); e != nil {
-			return fmt.Errorf("Failed overwriting %v", e)
-		}
-		if e := f.Close(); e != nil {
-			return fmt.Errorf("Failed closing after overwriting %v", e)
-		}
-	}
-
-	return nil
+	_, e = io.Copy(w, f)
+	return e
 }
 
-const (
-	HEAD = iota
-	PREEMBLE
-	TYPES
-	RULES
-	APPENDIX
-)
-
 func goyaccfmt(in io.Reader, out io.Writer) error {
+	const (
+		HEAD     = iota // content before %{
+		PREEMBLE        // between %{ and %}
+		TYPES           // between %} and %%
+		RULES           // bewteen the first and the second %%
+		APPENDIX        // after the second %%
+	)
+
 	var fmtr *gofmt
 	var e error
 	current := HEAD
