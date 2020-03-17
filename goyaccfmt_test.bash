@@ -12,7 +12,9 @@ func f() {fmt.Printf(
 %type  <tran> train_clause
 %%
 end_of_stmt
-: ';'         {}
+: ';'         {
+   do_something($1)
+}
 ;
 %%
 func g() {fmt.Printf("g")}
@@ -37,7 +39,9 @@ func f() {
 %type  <tran> train_clause
 %%
 end_of_stmt
-: ';'         {}
+: ';'         {
+   do_something($1)
+}
 ;
 %%
 func g() { fmt.Printf("g") }

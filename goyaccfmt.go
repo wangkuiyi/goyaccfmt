@@ -111,14 +111,14 @@ func goyaccfmt(in io.Reader, out io.Writer) error {
 					return e
 				}
 			}
-			fmt.Fprintf(out, "%s\n", l)
+			fmt.Fprintf(out, "%s\n", scanner.Text())
 
 		default: // normal lines
 			switch current {
 			case PREEMBLE, APPENDIX:
-				code += l + "\n"
+				code += scanner.Text() + "\n"
 			default:
-				fmt.Fprintf(out, "%s\n", l)
+				fmt.Fprintf(out, "%s\n", scanner.Text())
 			}
 		}
 	}
