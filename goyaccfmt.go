@@ -20,6 +20,7 @@ import (
 	"go/format"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 )
@@ -33,18 +34,15 @@ func main() {
 	overwrite := flag.Bool("w", false, "overwrite source file instead of stdout")
 	flag.Usage = usage
 	flag.Parse()
-	if flag.NArg() != 1 {
-		usage()
-		os.Exit(-1)
-	}
 
-	if e := goyaccfmtMain(flag.Arg(0), *overwrite); e != nil {
-		fmt.Fprintf(os.Stderr, "%s", e)
-		os.Exit(-1)
+	for _, f := range flag.Args() {
+		if e := formatFile(f, *overwrite); e != nil {
+			log.Fatal(e)
+		}
 	}
 }
 
-func goyaccfmtMain(path string, overwrite bool) error {
+func formatFile(path string, overwrite bool) error {
 	in, e := os.Open(path)
 	if e != nil {
 		return fmt.Errorf("Cannot open input %s: %v", path, e)
@@ -104,7 +102,7 @@ func goyaccfmt(in io.Reader, out io.Writer) error {
 			case PREEMBLE, APPENDIX:
 				code = "" // clear out for accumulation
 			case TYPES:
-				if e := formatAndPrint(code, out); e != nil {
+				if e := gofmt(code, out); e != nil {
 					return e
 				}
 			}
@@ -124,10 +122,10 @@ func goyaccfmt(in io.Reader, out io.Writer) error {
 		return fmt.Errorf("Scanner error: %v", e)
 	}
 
-	return formatAndPrint(code, out) // formatted appendix.
+	return gofmt(code, out) // formatted appendix.
 }
 
-func formatAndPrint(code string, out io.Writer) error {
+func gofmt(code string, out io.Writer) error {
 	src, e := format.Source([]byte(code))
 	if e != nil {
 		return e

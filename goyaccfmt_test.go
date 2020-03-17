@@ -57,11 +57,11 @@ func main() { Print() }
 `, out.String())
 }
 
-func TestFormatAndPrint(t *testing.T) {
+func TestGoFmt(t *testing.T) {
 	a := assert.New(t)
 
 	var out bytes.Buffer
-	e := formatAndPrint(`
+	e := gofmt(`
 	package parser
 	import 	"fmt"
 func Print() { fmt.Println("Hello")
