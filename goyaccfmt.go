@@ -35,10 +35,14 @@ func main() {
 	flag.Usage = usage
 	flag.Parse()
 
-	for _, f := range flag.Args() {
-		if e := formatFile(f, *overwrite); e != nil {
-			log.Fatal(e)
+	if flag.NArg() > 0 {
+		for _, f := range flag.Args() {
+			if e := formatFile(f, *overwrite); e != nil {
+				log.Fatal(e)
+			}
 		}
+	} else {
+		goyaccfmt(os.Stdin, os.Stdout)
 	}
 }
 
@@ -79,6 +83,7 @@ func cat(filename string, w io.Writer) error {
 	}
 
 	_, e = io.Copy(w, f)
+	f.Close()
 	return e
 }
 
