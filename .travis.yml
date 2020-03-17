@@ -4,5 +4,5 @@ go:
   - 1.13
 
 script:
-  - bash yamlfmt_test.bash
+  - bash goyaccfmt_test.bash
 
