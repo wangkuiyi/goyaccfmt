@@ -57,23 +57,19 @@ func main() { Print() }
 `, out.String())
 }
 
-func TestGoFmt(t *testing.T) {
+func TestFormatAndPrint(t *testing.T) {
 	a := assert.New(t)
 
 	var out bytes.Buffer
-	f, e := newGofmt(&out)
-	a.NoError(e)
-
-	_, e = f.Write([]byte(`
+	e := formatAndPrint(`
 	package parser
 	import 	"fmt"
 func Print() { fmt.Println("Hello")
 }
 func    main() { Print() }
-`))
+`, &out)
 	a.NoError(e)
 
-	a.NoError(f.Close())
 	a.Equal(`package parser
 
 import "fmt"

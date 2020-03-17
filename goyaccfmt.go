@@ -15,13 +15,12 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"flag"
 	"fmt"
+	"go/format"
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"strings"
 )
 
@@ -88,41 +87,36 @@ func cat(filename string, w io.Writer) error {
 func goyaccfmt(in io.Reader, out io.Writer) error {
 	const (
 		HEAD     = iota // content before %{
-		PREEMBLE        // between %{ and %}
+		PREEMBLE        // between %{ and %}, need gofmt
 		TYPES           // between %} and %%
 		RULES           // bewteen the first and the second %%
-		APPENDIX        // after the second %%
+		APPENDIX        // after the second %%, need gofmt
 	)
-
-	var fmtr *gofmt
-	var e error
 	current := HEAD
+	var code string
 
 	scanner := bufio.NewScanner(in)
 	for scanner.Scan() {
 		switch l := strings.TrimSpace(scanner.Text()); l {
-		case "%{", "%}", "%%":
+		case "%{", "%}", "%%": // control lines
 			current++
 			switch current {
 			case PREEMBLE, APPENDIX:
-				fmtr, e = newGofmt(out)
-				if e != nil {
-					return fmt.Errorf("newGofmt: %v", e)
-				}
+				code = "" // clear out for accumulation
 			case TYPES:
-				fmtr.Close()
+				if e := formatAndPrint(code, out); e != nil {
+					return e
+				}
 			}
 			fmt.Fprintf(out, "%s\n", l)
 
-		default:
-			var w io.Writer = out
-			if current == PREEMBLE || current == APPENDIX {
-				w = fmtr
+		default: // normal lines
+			switch current {
+			case PREEMBLE, APPENDIX:
+				code += l + "\n"
+			default:
+				fmt.Fprintf(out, "%s\n", l)
 			}
-			if _, e := w.Write(scanner.Bytes()); e != nil {
-				return fmt.Errorf("Copying content error: %v", e)
-			}
-			w.Write([]byte("\n"))
 		}
 	}
 
@@ -130,43 +124,14 @@ func goyaccfmt(in io.Reader, out io.Writer) error {
 		return fmt.Errorf("Scanner error: %v", e)
 	}
 
-	return fmtr.Close()
+	return formatAndPrint(code, out) // formatted appendix.
 }
 
-type gofmt struct {
-	pr     *io.PipeReader
-	pw     *io.PipeWriter
-	cmd    *exec.Cmd
-	stderr bytes.Buffer
-}
-
-func newGofmt(out io.Writer) (*gofmt, error) {
-	f := &gofmt{}
-	f.pr, f.pw = io.Pipe()
-
-	f.cmd = exec.Command("gofmt")
-	f.cmd.Stdin = f.pr
-	f.cmd.Stdout = out
-	f.cmd.Stderr = &f.stderr
-
-	if e := f.cmd.Start(); e != nil {
-		return nil, fmt.Errorf("Cannot start gofmt: %v", e)
+func formatAndPrint(code string, out io.Writer) error {
+	src, e := format.Source([]byte(code))
+	if e != nil {
+		return e
 	}
-	return f, nil
-}
-
-func (fmtr *gofmt) Write(b []byte) (int, error) {
-	return fmtr.pw.Write(b)
-}
-
-func (fmtr *gofmt) Close() error {
-	if e := fmtr.pw.Close(); e != nil { // Signal the end of content.
-		return fmt.Errorf("Close pipe writer: %v", e)
-	}
-
-	if e := fmtr.cmd.Wait(); e != nil {
-		return fmt.Errorf("Waiting for gofmt: %v. %s", e, fmtr.stderr.String())
-	}
-
-	return nil
+	_, e = out.Write(src)
+	return e
 }
