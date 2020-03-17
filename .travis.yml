@@ -1,1 +1,8 @@
 language: go
+
+go:
+  - 1.13
+
+script:
+  - bash goyaccfmt_test.bash
+

@@ -28,3 +28,29 @@ To the right is the difference before and after auto reformatting the grammar ru
 
 </td></tr>
 </table>
+
+## Usage
+
+- To beautify one or more files and write to stdout:
+
+   ```bash
+   goyaccfmt a.yaml b.yaml c.yaml
+   ```
+
+- To beautify one or more files in the replace mode:
+
+  ```bash
+  goyaccfmt -w a.yaml b.yaml c.yaml
+  ```
+
+- To beautify stdin and write to stdout:
+
+  ```bash
+  cat a.yaml | goyaccfmt
+  ```
+
+- To beautify stdin and write to a file:
+
+  ```bash
+  cat a.yaml | goyaccfmt > b.yaml
+  ```
